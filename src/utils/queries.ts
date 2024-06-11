@@ -302,7 +302,7 @@ export const getTossupsByTournamentQuery = db.prepare(`
             COUNT(DISTINCT IIF(question_number <= tossups_read, game.id, null)) AS heard,
             ROUND(CAST(SUM(IIF(buzz.value > 0, 1, 0)) AS FLOAT) / COUNT(DISTINCT IIF(question_number <= tossups_read, game.id, null)), 3) AS conversion_rate,
             ROUND(CAST(SUM(IIF(buzz.value > 10, 1, 0)) AS FLOAT) / COUNT(DISTINCT IIF(question_number <= tossups_read, game.id, null)), 3) AS power_rate,
-            ROUND(CAST(SUM(IIF(buzz.value < 0, 1, 0)) AS FLOAT) / COUNT(DISTINCT IIF(question_number <= tossups_read, game.id, null)), 3) AS neg_rate,
+            ROUND(CAST(SUM(IIF(buzz.value <= 0, 1, 0)) AS FLOAT) / COUNT(DISTINCT IIF(question_number <= tossups_read, game.id, null)), 3) AS neg_rate,
             MIN(IIF(buzz.value > 0, buzz.buzz_position, NULL)) AS first_buzz,
             AVG(IIF(buzz.value > 0, buzz.buzz_position, NULL)) AS average_buzz
     FROM    tournament
@@ -334,7 +334,7 @@ export const getTossupsByQuestionSetQuery = db.prepare(`
             COUNT(DISTINCT IIF(question_number <= tossups_read, game.id, null)) AS heard,
             ROUND(CAST(SUM(IIF(buzz.value > 0, 1, 0)) AS FLOAT) / COUNT(DISTINCT IIF(question_number <= tossups_read, game.id, null)), 3) AS conversion_rate,
             ROUND(CAST(SUM(IIF(buzz.value > 10, 1, 0)) AS FLOAT) / COUNT(DISTINCT IIF(question_number <= tossups_read, game.id, null)), 3) AS power_rate,
-            ROUND(CAST(SUM(IIF(buzz.value < 0, 1, 0)) AS FLOAT) / COUNT(DISTINCT IIF(question_number <= tossups_read, game.id, null)), 3) AS neg_rate,
+            ROUND(CAST(SUM(IIF(buzz.value <= 0, 1, 0)) AS FLOAT) / COUNT(DISTINCT IIF(question_number <= tossups_read, game.id, null)), 3) AS neg_rate,
             MIN(IIF(buzz.value > 0, buzz.buzz_position, NULL)) AS first_buzz,
             AVG(IIF(buzz.value > 0, buzz.buzz_position, NULL)) AS average_buzz
     FROM    question_set
@@ -362,7 +362,7 @@ export const getTossupCategoryStatsQuery = db.prepare(`
             COUNT(DISTINCT IIF(question_number <= tossups_read, game.id, null)) AS heard,
             ROUND(CAST(SUM(IIF(buzz.value > 0, 1, 0)) AS FLOAT) / COUNT(DISTINCT IIF(question_number <= tossups_read, game.id || '-' || tossup.id, null)), 3) AS conversion_rate,
             ROUND(CAST(SUM(IIF(buzz.value > 10, 1, 0)) AS FLOAT) / COUNT(DISTINCT IIF(question_number <= tossups_read, game.id || '-' || tossup.id, null)), 3) AS power_rate,
-            ROUND(CAST(SUM(IIF(buzz.value < 0, 1, 0)) AS FLOAT) / COUNT(DISTINCT IIF(question_number <= tossups_read, game.id || '-' || tossup.id, null)), 3) AS neg_rate,
+            ROUND(CAST(SUM(IIF(buzz.value <= 0, 1, 0)) AS FLOAT) / COUNT(DISTINCT IIF(question_number <= tossups_read, game.id || '-' || tossup.id, null)), 3) AS neg_rate,
             MIN(IIF(buzz.value > 0, buzz.buzz_position, NULL)) AS first_buzz,
             AVG(IIF(buzz.value > 0, buzz.buzz_position, NULL)) AS average_buzz
     FROM    tournament
@@ -385,7 +385,7 @@ export const getTossupCategoryStatsForSetQuery = db.prepare(`
             COUNT(DISTINCT IIF(question_number <= tossups_read, game.id || '-' || tossup.id, null)) AS heard,
             ROUND(CAST(SUM(IIF(buzz.value > 0, 1, 0)) AS FLOAT) / COUNT(DISTINCT IIF(question_number <= tossups_read, game.id || '-' || tossup.id, null)), 3) AS conversion_rate,
             ROUND(CAST(SUM(IIF(buzz.value > 10, 1, 0)) AS FLOAT) / COUNT(DISTINCT IIF(question_number <= tossups_read, game.id || '-' || tossup.id, null)), 3) AS power_rate,
-            ROUND(CAST(SUM(IIF(buzz.value < 0, 1, 0)) AS FLOAT) / COUNT(DISTINCT IIF(question_number <= tossups_read, game.id || '-' || tossup.id, null)), 3) AS neg_rate,
+            ROUND(CAST(SUM(IIF(buzz.value <= 0, 1, 0)) AS FLOAT) / COUNT(DISTINCT IIF(question_number <= tossups_read, game.id || '-' || tossup.id, null)), 3) AS neg_rate,
             MIN(IIF(buzz.value > 0, buzz.buzz_position, NULL)) AS first_buzz,
             AVG(IIF(buzz.value > 0, buzz.buzz_position, NULL)) AS average_buzz
     FROM    tournament
@@ -427,8 +427,8 @@ WITH raw_buzzes AS (
             category_main as category,
             sum(iif(buzz.value > 10, 1, 0)) as powers,
             sum(iif(buzz.value = 10, 1, 0)) as gets,
-            sum(iif(buzz.value < 0, 1, 0)) as negs,
-            sum(iif(buzz.value > 10, 15, iif(buzz.value = 10, 10, iif(buzz.value < 0, -5, 0)))) as points,
+            sum(iif(buzz.value <= 0, 1, 0)) as negs,
+            sum(iif(buzz.value > 10, 15, iif(buzz.value = 10, 10, iif(buzz.value <= 0, -5, 0)))) as points,
             min(iif(buzz.value > 0, buzz.buzz_position, NULL)) earliest_buzz,
             avg(iif(buzz.value > 0, buzz.buzz_position, NULL)) average_buzz,
             sum(iif(first.tossup_id is not null, 1, 0)) as first_buzzes,
@@ -687,8 +687,8 @@ WITH raw_buzzes AS (
             question.category_main as category,
             sum(iif(buzz.value > 10, 1, 0)) as powers,
             sum(iif(buzz.value = 10, 1, 0)) as gets,
-            sum(iif(buzz.value < 0, 1, 0)) as negs,
-            sum(iif(buzz.value > 10, 15, iif(buzz.value = 10, 10, iif(buzz.value < 0, -5, 0)))) as points,
+            sum(iif(buzz.value <= 0, 1, 0)) as negs,
+            sum(iif(buzz.value > 10, 15, iif(buzz.value = 10, 10, iif(buzz.value <= 0, -5, 0)))) as points,
             min(iif(buzz.value > 0, buzz.buzz_position, NULL)) earliest_buzz,
             avg(iif(buzz.value > 0, buzz.buzz_position, NULL)) average_buzz,
             sum(iif(first.tossup_id is not null, 1, 0)) as first_buzzes,
@@ -779,7 +779,7 @@ export const getQuestionSetsQuery = db.prepare(`
                 WHERE  question_set_id = question_set.id
             ) power_rate,
             (
-                SELECT CAST(SUM(IIF(buzz.value < 0, 1, 0)) AS FLOAT) / COUNT(distinct tossup.id || '-' || game.id) as neg_rate
+                SELECT CAST(SUM(IIF(buzz.value <= 0, 1, 0)) AS FLOAT) / COUNT(distinct tossup.id || '-' || game.id) as neg_rate
                 FROM   tossup
                 JOIN   question ON tossup.question_id = question.id
                 JOIN   packet_question ON question.id = packet_question.question_id
@@ -894,7 +894,7 @@ export const getQuestionSetDetailedBySlugQuery = db.prepare(`
                 WHERE  question_set_id = question_set.id
             ) power_rate,
             (
-                SELECT CAST(SUM(IIF(buzz.value < 0, 1, 0)) AS FLOAT) / COUNT(distinct tossup.id || '-' || game.id) as neg_rate
+                SELECT CAST(SUM(IIF(buzz.value <= 0, 1, 0)) AS FLOAT) / COUNT(distinct tossup.id || '-' || game.id) as neg_rate
                 FROM   tossup
                 JOIN   question ON tossup.question_id = question.id
                 JOIN   packet_question ON question.id = packet_question.question_id
@@ -1007,8 +1007,8 @@ WITH raw_buzzes AS (
             tournament.slug as tournament_slug,
             sum(iif(buzz.value > 10, 1, 0)) as powers,
             sum(iif(buzz.value = 10, 1, 0)) as gets,
-            sum(iif(buzz.value < 0, 1, 0)) as negs,
-            sum(iif(buzz.value > 10, 15, iif(buzz.value = 10, 10, iif(buzz.value < 0, -5, 0)))) as points,
+            sum(iif(buzz.value <= 0, 1, 0)) as negs,
+            sum(iif(buzz.value > 10, 15, iif(buzz.value = 10, 10, iif(buzz.value <= 0, -5, 0)))) as points,
             min(iif(buzz.value > 0, buzz.buzz_position, NULL)) earliest_buzz,
             avg(iif(buzz.value > 0, buzz.buzz_position, NULL)) average_buzz,
             sum(iif(first.tossup_id is not null, 1, 0)) as first_buzzes,
@@ -1053,13 +1053,13 @@ SELECT  team.name,
         team.slug,
         sum(iif(buzz.value > 10, 1, 0)) as powers,
         sum(iif(buzz.value = 10, 1, 0)) as gets,
-        sum(iif(buzz.value < 0, 1, 0)) as negs,
+        sum(iif(buzz.value <= 0, 1, 0)) as negs,
         sum(iif(neg.tossup_id is not null, 1, 0)) bouncebacks,
         min(iif(buzz.value > 0, buzz.buzz_position, NULL)) earliest_buzz,
         avg(iif(buzz.value > 0, buzz.buzz_position, NULL)) average_buzz,
         sum(iif(first.tossup_id is not null, 1, 0)) as first_buzzes,
         sum(iif(top_three.tossup_id is not null, 1, 0)) as top_three_buzzes,
-        sum(iif(buzz.value > 10, 15, iif(buzz.value = 10, 10, iif(buzz.value < 0, -5, 0)))) as points
+        sum(iif(buzz.value > 10, 15, iif(buzz.value = 10, 10, iif(buzz.value <= 0, -5, 0)))) as points
 FROM	tournament
 JOIN	round ON round.tournament_id = tournament.id
 JOIN	game ON round_id = round.id
@@ -1087,7 +1087,7 @@ SELECT	tournament.id as tournament_id,
 		COUNT(distinct game.id) as tuh,
 		CAST(SUM(IIF(buzz.value > 0, 1, 0)) AS FLOAT) / COUNT(distinct game.id) as conversion_rate,
 		CAST(SUM(IIF(buzz.value > 10, 1, 0)) AS FLOAT) / COUNT(distinct game.id) as power_rate,		
-		CAST(SUM(IIF(buzz.value < 0, 1, 0)) AS FLOAT) / COUNT(distinct game.id) as neg_rate,
+		CAST(SUM(IIF(buzz.value <= 0, 1, 0)) AS FLOAT) / COUNT(distinct game.id) as neg_rate,
 		AVG(IIF(buzz.value > 0, buzz.buzz_position, NULL)) as average_buzz
 FROM	tossup
 JOIN	question ON tossup.question_id = question.id
@@ -1119,7 +1119,7 @@ SELECT	tournament.id as tournament_id,
 		COUNT(distinct game.id) as tuh,
 		CAST(SUM(IIF(buzz.value > 0, 1, 0)) AS FLOAT) / COUNT(distinct game.id) as conversion_rate,
 		CAST(SUM(IIF(buzz.value > 10, 1, 0)) AS FLOAT) / COUNT(distinct game.id) as power_rate,		
-		CAST(SUM(IIF(buzz.value < 0, 1, 0)) AS FLOAT) / COUNT(distinct game.id) as neg_rate,
+		CAST(SUM(IIF(buzz.value <= 0, 1, 0)) AS FLOAT) / COUNT(distinct game.id) as neg_rate,
 		AVG(IIF(buzz.value > 0, buzz.buzz_position, NULL)) as average_buzz
 FROM	tossup
 JOIN	question ON tossup.question_id = question.id
