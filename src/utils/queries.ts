@@ -489,7 +489,7 @@ export const getBonusesByTournamentQuery = db.prepare(`
 SELECT  tournament.slug AS tournament_slug,
 round.number AS round,
 question_number,
-category_full AS category,
+category_main AS category,
 category_main_slug AS category_slug,
 easy_part.answer AS easy_part,
 medium_part.answer AS medium_part,
